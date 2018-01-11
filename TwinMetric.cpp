@@ -7,7 +7,7 @@
 #include <assert.h>
 
 #define FONT_NAME "MS Gothic"
-#define FONT_FILE "msgothic.ttf"
+#define FONT_FILE "msgothic.ttc"
 
 SIZE TestWin(const char *text, INT nPointSize)
 {
@@ -44,10 +44,23 @@ SIZE TestFT(const char *text, INT nPointSize)
     lstrcatA(szPath, "\\Fonts\\");
     lstrcatA(szPath, FONT_FILE);
 
-    FT_Face face;
-    FT_New_Face(library, szPath, 0, &face);
+    FT_Face face = NULL;
+    FT_Error err = FT_New_Face(library, szPath, 0, &face);
 
-    ...(1)...
+    FT_Set_Char_Size(face, 0, nPointSize * 64, 96, 96);
+
+    FT_GlyphSlot slot = face->glyph;
+    assert(slot);
+    for (size_t i = 0; text[i]; ++i)
+    {
+        FT_UInt glyph_index = FT_Get_Char_Index(face, text[i]);
+        FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+
+        siz.cx += slot->advance.x;
+    }
+
+    siz.cx >>= 6;
+    siz.cy = face->size->metrics.height >> 6;
 
     FT_Done_Face(face);
     FT_Done_FreeType(library);
