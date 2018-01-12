@@ -6,8 +6,12 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define FONT_NAME "MS Gothic"
-#define FONT_FILE "msgothic.ttc"
+//#define FONT_NAME "MS Gothic"
+//#define FONT_FILE "msgothic.ttc"
+//#define FONT_NAME "DejaVu Sans"
+//#define FONT_FILE "DejaVuSans.ttf"
+#define FONT_NAME "DejaVu Serif"
+#define FONT_FILE "DejaVuSerif.ttf"
 
 SIZE TestWin(const char *text, INT nPointSize)
 {
@@ -24,6 +28,14 @@ SIZE TestWin(const char *text, INT nPointSize)
         HGDIOBJ hFontOld = SelectObject(hDC, hFont);
         {
             GetTextExtentPoint32A(hDC, text, lstrlenA(text), &siz);
+
+            TEXTMETRIC tm;
+            GetTextMetrics(hDC, &tm);
+            printf("tmHeight: %ld\n", tm.tmHeight);
+            printf("tmAscent: %ld\n", tm.tmAscent);
+            printf("tmDescent: %ld\n", tm.tmDescent);
+            printf("tmInternalLeading: %ld\n", tm.tmInternalLeading);
+            printf("tmExternalLeading: %ld\n", tm.tmExternalLeading);
         }
         SelectObject(hDC, hFontOld);
         DeleteObject(hFont);
@@ -60,7 +72,14 @@ SIZE TestFT(const char *text, INT nPointSize)
     }
 
     siz.cx >>= 6;
-    siz.cy = face->size->metrics.height >> 6;
+    siz.cy = face->size->metrics.ascender - face->size->metrics.descender - 32;
+    siz.cy >>= 6;
+
+    printf("tmHeight: %ld\n", face->size->metrics.height >> 6);
+    printf("tmAscent: %ld\n", face->size->metrics.ascender >> 6);
+    printf("tmDescent: %ld\n", (face->size->metrics.height - face->size->metrics.ascender) >> 6);
+    printf("tmInternalLeading: %ld\n", (face->size->metrics.height >> 6) - face->size->metrics.y_ppem);
+    printf("tmExternalLeading: %ld\n", 0);
 
     FT_Done_Face(face);
     FT_Done_FreeType(library);
@@ -71,14 +90,16 @@ int main(void)
 {
     const char *text = "This is a sample text.";
 
-    SIZE sizWin = TestWin(text, 200);
+    printf("---\n");
+    SIZE sizWin = TestWin(text, 500);
     printf("sizWin: %ld, %ld\n", sizWin.cx, sizWin.cy);
 
-    SIZE sizFT = TestFT(text, 200);
+    printf("---\n");
+    SIZE sizFT = TestFT(text, 500);
     printf("sizFT: %ld, %ld\n", sizFT.cx, sizFT.cy);
 
-    assert(sizWin.cx == sizFT.cx);
-    assert(sizWin.cy == sizFT.cy);
+    assert(labs(sizWin.cx - sizFT.cx) <= 1);
+    assert(labs(sizWin.cy - sizFT.cy) <= 1);
 
     return 0;
 }
