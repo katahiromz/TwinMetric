@@ -10,8 +10,10 @@
 //#define FONT_FILE "msgothic.ttc"
 //#define FONT_NAME "DejaVu Sans"
 //#define FONT_FILE "DejaVuSans.ttf"
-#define FONT_NAME "DejaVu Serif"
-#define FONT_FILE "DejaVuSerif.ttf"
+//#define FONT_NAME "DejaVu Serif"
+//#define FONT_FILE "DejaVuSerif.ttf"
+#define FONT_NAME "FreeMono"
+#define FONT_FILE "FreeMono.ttf"
 
 SIZE TestWin(const char *text, INT nPointSize)
 {
@@ -59,7 +61,10 @@ SIZE TestFT(const char *text, INT nPointSize)
     FT_Face face = NULL;
     FT_Error err = FT_New_Face(library, szPath, 0, &face);
 
-    FT_Set_Char_Size(face, 0, nPointSize * 64, 96, 96);
+    LONG lfHeight = -MulDiv(nPointSize, 96, 72);
+    INT nHeight = -lfHeight * 72 / 96;
+
+    FT_Set_Char_Size(face, 0, nHeight * 64, 96, 96);
 
     FT_GlyphSlot slot = face->glyph;
     assert(slot);
