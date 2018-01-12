@@ -100,6 +100,7 @@ int main(void)
 {
     const char *text = "This is a sample text.";
 
+    INT nPenalty = 0;
     for (int i = 20; i < 750; i += 21)
     {
         printf("---\n");
@@ -112,14 +113,24 @@ int main(void)
         SIZE sizFT = TestFT(text, i, tm2);
         printf("sizFT: %ld, %ld\n", sizFT.cx, sizFT.cy);
 
-        assert(labs(tm1.tmHeight - tm2.tmHeight ) <= 1);
+        assert(labs(tm1.tmHeight - tm2.tmHeight) <= 1);
         assert(labs(tm1.tmAscent - tm2.tmAscent) <= 1);
         assert(labs(tm1.tmDescent - tm2.tmDescent) <= 1);
         assert(labs(tm1.tmInternalLeading - tm2.tmInternalLeading) <= 1);
         assert(labs(tm1.tmExternalLeading - tm2.tmExternalLeading) <= 1);
         assert(labs(sizWin.cx - sizFT.cx) <= 1);
         assert(labs(sizWin.cy - sizFT.cy) <= 1);
+
+        nPenalty += (tm1.tmHeight == tm2.tmHeight) * 2;
+        nPenalty += tm1.tmAscent == tm2.tmAscent;
+        nPenalty += tm1.tmDescent == tm2.tmDescent;
+        nPenalty += tm1.tmInternalLeading == tm2.tmInternalLeading;
+        nPenalty += tm1.tmExternalLeading == tm2.tmExternalLeading;
+        nPenalty += (sizWin.cx == sizFT.cx) * 2;
+        nPenalty += (sizWin.cy == sizFT.cy) * 2;
     }
+    printf("---\n");
+    printf("nPenalty: %d\n", nPenalty);
 
     return 0;
 }
