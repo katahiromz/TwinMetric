@@ -8,14 +8,14 @@
 
 //#define FONT_NAME "MS Gothic"
 //#define FONT_FILE "msgothic.ttc"
-//#define FONT_NAME "DejaVu Sans"
-//#define FONT_FILE "DejaVuSans.ttf"
+#define FONT_NAME "DejaVu Sans"
+#define FONT_FILE "DejaVuSans.ttf"
 //#define FONT_NAME "DejaVu Serif"
 //#define FONT_FILE "DejaVuSerif.ttf"
-#define FONT_NAME "FreeMono"
-#define FONT_FILE "FreeMono.ttf"
+//#define FONT_NAME "FreeMono"
+//#define FONT_FILE "FreeMono.ttf"
 
-SIZE TestWin(const char *text, INT nPointSize)
+SIZE TestWin(const char *text, INT nPointSize, TEXTMETRIC& tm)
 {
     SIZE siz = { 0, 0 };
     LOGFONT lf;
@@ -31,7 +31,6 @@ SIZE TestWin(const char *text, INT nPointSize)
         {
             GetTextExtentPoint32A(hDC, text, lstrlenA(text), &siz);
 
-            TEXTMETRIC tm;
             GetTextMetrics(hDC, &tm);
             printf("tmHeight: %ld\n", tm.tmHeight);
             printf("tmAscent: %ld\n", tm.tmAscent);
@@ -47,7 +46,7 @@ SIZE TestWin(const char *text, INT nPointSize)
     return siz;
 }
 
-SIZE TestFT(const char *text, INT nPointSize)
+SIZE TestFT(const char *text, INT nPointSize, TEXTMETRIC& tm)
 {
     SIZE siz = { 0, 0 };
     FT_Library library;
@@ -62,7 +61,7 @@ SIZE TestFT(const char *text, INT nPointSize)
     FT_Error err = FT_New_Face(library, szPath, 0, &face);
 
     LONG lfHeight = -MulDiv(nPointSize, 96, 72);
-    INT nHeight = -lfHeight * 72 / 96;
+    INT nHeight = MulDiv(-lfHeight, 72, 96);
 
     FT_Set_Char_Size(face, 0, nHeight * 64, 96, 96);
 
@@ -77,13 +76,12 @@ SIZE TestFT(const char *text, INT nPointSize)
     }
 
     siz.cx >>= 6;
-    siz.cy = face->size->metrics.ascender - face->size->metrics.descender - 32;
+    siz.cy = face->size->metrics.height;
     siz.cy >>= 6;
 
-    TEXTMETRIC tm;
     tm.tmHeight = face->size->metrics.height >> 6;
     tm.tmAscent = face->size->metrics.ascender >> 6;
-    tm.tmDescent = (face->size->metrics.height - face->size->metrics.ascender) >> 6;
+    tm.tmDescent = tm.tmHeight - tm.tmAscent;
     tm.tmInternalLeading = (face->size->metrics.height >> 6) - face->size->metrics.y_ppem;
     tm.tmExternalLeading = 0;
 
@@ -102,16 +100,26 @@ int main(void)
 {
     const char *text = "This is a sample text.";
 
-    printf("---\n");
-    SIZE sizWin = TestWin(text, 500);
-    printf("sizWin: %ld, %ld\n", sizWin.cx, sizWin.cy);
+    for (int i = 20; i < 750; i += 21)
+    {
+        printf("---\n");
+        TEXTMETRIC tm1;
+        SIZE sizWin = TestWin(text, i, tm1);
+        printf("sizWin: %ld, %ld\n", sizWin.cx, sizWin.cy);
 
-    printf("---\n");
-    SIZE sizFT = TestFT(text, 500);
-    printf("sizFT: %ld, %ld\n", sizFT.cx, sizFT.cy);
+        printf("---\n");
+        TEXTMETRIC tm2;
+        SIZE sizFT = TestFT(text, i, tm2);
+        printf("sizFT: %ld, %ld\n", sizFT.cx, sizFT.cy);
 
-    assert(labs(sizWin.cx - sizFT.cx) <= 1);
-    assert(labs(sizWin.cy - sizFT.cy) <= 1);
+        assert(labs(tm1.tmHeight - tm2.tmHeight ) <= 1);
+        assert(labs(tm1.tmAscent - tm2.tmAscent) <= 1);
+        assert(labs(tm1.tmDescent - tm2.tmDescent) <= 1);
+        assert(labs(tm1.tmInternalLeading - tm2.tmInternalLeading) <= 1);
+        assert(labs(tm1.tmExternalLeading - tm2.tmExternalLeading) <= 1);
+        assert(labs(sizWin.cx - sizFT.cx) <= 1);
+        assert(labs(sizWin.cy - sizFT.cy) <= 1);
+    }
 
     return 0;
 }
