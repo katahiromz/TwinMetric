@@ -80,11 +80,18 @@ SIZE TestFT(const char *text, INT nPointSize)
     siz.cy = face->size->metrics.ascender - face->size->metrics.descender - 32;
     siz.cy >>= 6;
 
-    printf("tmHeight: %ld\n", face->size->metrics.height >> 6);
-    printf("tmAscent: %ld\n", face->size->metrics.ascender >> 6);
-    printf("tmDescent: %ld\n", (face->size->metrics.height - face->size->metrics.ascender) >> 6);
-    printf("tmInternalLeading: %ld\n", (face->size->metrics.height >> 6) - face->size->metrics.y_ppem);
-    printf("tmExternalLeading: %ld\n", 0);
+    TEXTMETRIC tm;
+    tm.tmHeight = face->size->metrics.height >> 6;
+    tm.tmAscent = face->size->metrics.ascender >> 6;
+    tm.tmDescent = (face->size->metrics.height - face->size->metrics.ascender) >> 6;
+    tm.tmInternalLeading = (face->size->metrics.height >> 6) - face->size->metrics.y_ppem;
+    tm.tmExternalLeading = 0;
+
+    printf("tmHeight: %ld\n", tm.tmHeight);
+    printf("tmAscent: %ld\n", tm.tmAscent);
+    printf("tmDescent: %ld\n", tm.tmDescent);
+    printf("tmInternalLeading: %ld\n", tm.tmInternalLeading);
+    printf("tmExternalLeading: %ld\n", tm.tmExternalLeading);
 
     FT_Done_Face(face);
     FT_Done_FreeType(library);
