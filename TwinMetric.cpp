@@ -32,11 +32,6 @@ SIZE TestWin(const char *text, INT nPointSize, TEXTMETRIC& tm)
             GetTextExtentPoint32A(hDC, text, lstrlenA(text), &siz);
 
             GetTextMetrics(hDC, &tm);
-            printf("tmHeight: %ld\n", tm.tmHeight);
-            printf("tmAscent: %ld\n", tm.tmAscent);
-            printf("tmDescent: %ld\n", tm.tmDescent);
-            printf("tmInternalLeading: %ld\n", tm.tmInternalLeading);
-            printf("tmExternalLeading: %ld\n", tm.tmExternalLeading);
         }
         SelectObject(hDC, hFontOld);
         DeleteObject(hFont);
@@ -61,9 +56,10 @@ SIZE TestFT(const char *text, INT nPointSize, TEXTMETRIC& tm)
     FT_Error err = FT_New_Face(library, szPath, 0, &face);
 
     LONG lfHeight = -MulDiv(nPointSize, 96, 72);
-    INT nHeight = MulDiv(-lfHeight, 72, 96);
+    INT nHeight = MulDiv(-lfHeight * 64, 72, 96);
 
-    FT_Set_Char_Size(face, 0, nHeight * 64, 96, 96);
+    
+    FT_Set_Char_Size(face, 0, nHeight, 96, 96);
 
     FT_GlyphSlot slot = face->glyph;
     assert(slot);
@@ -80,16 +76,10 @@ SIZE TestFT(const char *text, INT nPointSize, TEXTMETRIC& tm)
     siz.cy >>= 6;
 
     tm.tmHeight = face->size->metrics.height >> 6;
-    tm.tmAscent = face->size->metrics.ascender >> 6;
+    tm.tmAscent = (face->size->metrics.height + face->size->metrics.descender) >> 6;
     tm.tmDescent = tm.tmHeight - tm.tmAscent;
     tm.tmInternalLeading = (face->size->metrics.height >> 6) - face->size->metrics.y_ppem;
     tm.tmExternalLeading = 0;
-
-    printf("tmHeight: %ld\n", tm.tmHeight);
-    printf("tmAscent: %ld\n", tm.tmAscent);
-    printf("tmDescent: %ld\n", tm.tmDescent);
-    printf("tmInternalLeading: %ld\n", tm.tmInternalLeading);
-    printf("tmExternalLeading: %ld\n", tm.tmExternalLeading);
 
     FT_Done_Face(face);
     FT_Done_FreeType(library);
@@ -101,17 +91,22 @@ int main(void)
     const char *text = "This is a sample text.";
 
     INT nTotalScore = 0;
-    for (int i = 20; i < 750; i += 21)
+    for (int i = 20; i < 750; i += 3)
     {
         printf("---\n");
         TEXTMETRIC tm1;
         SIZE sizWin = TestWin(text, i, tm1);
         printf("sizWin: %ld, %ld\n", sizWin.cx, sizWin.cy);
 
-        printf("---\n");
         TEXTMETRIC tm2;
         SIZE sizFT = TestFT(text, i, tm2);
         printf("sizFT: %ld, %ld\n", sizFT.cx, sizFT.cy);
+
+        printf("tmHeight: %ld <=> %ld\n", tm1.tmHeight, tm2.tmHeight);
+        printf("tmAscent: %ld <=> %ld\n", tm1.tmAscent, tm2.tmAscent);
+        printf("tmDescent: %ld <=> %ld\n", tm1.tmDescent, tm2.tmDescent);
+        printf("tmInternalLeading: %ld <=> %ld\n", tm1.tmInternalLeading, tm2.tmInternalLeading);
+        printf("tmExternalLeading: %ld <=> %ld\n", tm1.tmExternalLeading, tm2.tmExternalLeading);
 
         assert(labs(tm1.tmHeight - tm2.tmHeight) <= 1);
         assert(labs(tm1.tmAscent - tm2.tmAscent) <= 1);
