@@ -19,6 +19,7 @@ NAME_AND_FILE g_pairs[] =
     { "FreeMono", "FreeMono.ttf" },
     { "DejaVu Serif", "DejaVuSerif.ttf" },
     { "DejaVu Sans", "DejaVuSans.ttf" },
+    { "Ubuntu Mono", "UbuntuMono-R.ttf" },
 };
 size_t g_pair_count = sizeof(g_pairs) / sizeof(g_pairs[0]);
 
@@ -45,6 +46,8 @@ SIZE TestWin(const char *font_name, const char *text, LONG nHeight, TEXTMETRIC& 
     SelectObject(g_hDC, hFontOld);
     DeleteObject(hFont);
 
+    assert(siz.cy == tm.tmHeight);
+
     return siz;
 }
 
@@ -63,28 +66,89 @@ SIZE TestFT(const char *font_file, const char *text, INT nHeight, TEXTMETRIC& tm
     INT n64thPoints = labs(lfHeight) * 72 * 64 / GetDeviceCaps(g_hDC, LOGPIXELSY);
 
     FT_Size_RequestRec req;
-    req.type = (lfHeight < 0) ? FT_SIZE_REQUEST_TYPE_NOMINAL : FT_SIZE_REQUEST_TYPE_REAL_DIM;
+    //req.type = (lfHeight < 0) ? FT_SIZE_REQUEST_TYPE_NOMINAL : FT_SIZE_REQUEST_TYPE_REAL_DIM;
+    req.type = FT_SIZE_REQUEST_TYPE_SCALES;
     req.width = 0;
-    req.height = n64thPoints;
+    req.height = 1 << 16;
     req.horiResolution = 96;
     req.vertResolution = 96;
-    FT_Request_Size(face, &req);
+    bool flag = false;
+    for (;;)
+    {
+        FT_Request_Size(face, &req);
+
+        LONG pixel_height = MulDiv(face->height - internal_leading, face->size->metrics.y_ppem, face->units_per_EM);
+        if (flag)
+            printf("req.height: %d, pixel_height: %d\n", req.height, pixel_height);
+
+        if (lfHeight < 0)
+        {
+            if (pixel_height > labs(lfHeight))
+            {
+                if (!flag)
+                {
+                    req.height -= 1 << 16;
+                    flag = true;
+                }
+                else
+                {
+                    for (;;)
+                    {
+                        FT_Request_Size(face, &req);
+                        pixel_height = MulDiv(face->height - internal_leading, face->size->metrics.y_ppem, face->units_per_EM);
+                        if (pixel_height <= labs(lfHeight))
+                            break;
+                        req.height -= 1;
+                    }
+                    printf("*req.height: %d, pixel_height: %d\n", req.height, pixel_height);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            LONG pixel_height = face->height * face->size->metrics.y_ppem / face->units_per_EM;
+            if (pixel_height > nHeight)
+            {
+                --req.height;
+                printf("req.height: %d\n", req.height);
+                break;
+            }
+        }
+
+        if (flag)
+            req.height += 1 << 6;
+        else
+            req.height += 1 << 16;
+    }
 
     FT_GlyphSlot slot = face->glyph;
     assert(slot);
+    FT_Bool useKerning = FT_HAS_KERNING(face);
+    FT_UInt previous = 0;
     for (size_t i = 0; text[i]; ++i)
     {
         FT_UInt glyph_index = FT_Get_Char_Index(face, text[i]);
+
+        if (useKerning && previous && glyph_index)
+        {
+            FT_Vector delta;
+            FT_Get_Kerning(face, previous, glyph_index, FT_KERNING_DEFAULT, &delta);
+            siz.cx += (delta.x + 32) >> 6;
+        }
+
         FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
 
-        siz.cx += slot->advance.x;
+        siz.cx += (slot->advance.x + 32) >> 6;
+
+        previous = glyph_index;
     }
 
-    siz.cx >>= 6;
+    //siz.cx >>= 6;
     siz.cy = face->size->metrics.height;
     siz.cy >>= 6;
 
-    tm.tmHeight = (face->size->metrics.height + 32) >> 6;
+    tm.tmHeight = (face->size->metrics.height) >> 6;
     tm.tmAscent = (face->size->metrics.ascender) >> 6;
     tm.tmDescent = tm.tmHeight - tm.tmAscent;
     tm.tmInternalLeading = (face->size->metrics.height >> 6) - face->size->metrics.y_ppem;
@@ -124,7 +188,7 @@ int main(void)
 
         for (int i = -120; i < 120; ++i)
         {
-            if (abs(i) < 8)
+            if (abs(i) < 4)
                 continue;
 
             printf("---\n");
@@ -170,10 +234,9 @@ int main(void)
             printf("nScore: %d\n", nScore);
             nTotalScore += nScore;
         }
-        printf("---\n");
-        printf("nTotalScore: %d\n", nTotalScore);
-        nTotalScore = 0;
     }
+    printf("---\n");
+    printf("nTotalScore: %d\n", nTotalScore);
 
     DeleteDC(g_hDC);
     FT_Done_FreeType(g_library);
