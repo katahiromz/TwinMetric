@@ -31,6 +31,7 @@ SIZE TestWin(const char *font_name, const char *text, LONG nHeight, TEXTMETRIC& 
     LOGFONTA lf;
 
     ZeroMemory(&lf, sizeof(lf));
+    lf.lfCharSet = DEFAULT_CHARSET;
     lf.lfHeight = nHeight;
     lstrcpyA(lf.lfFaceName, font_name);
     HFONT hFont = CreateFontIndirectA(&lf);
