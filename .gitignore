@@ -29,3 +29,4 @@ ipch
 Testing
 CTestTestfile.cmake
 .vs
+*.csv
