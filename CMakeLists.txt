@@ -26,8 +26,12 @@ add_executable(TwinMetric TwinMetric.cpp)
 target_include_directories(TwinMetric PRIVATE ${FREETYPE_INCLUDE_DIRS})
 target_link_libraries(TwinMetric ${FREETYPE_LIBRARIES})
 
-add_executable(TwinMetric2 TwinMetric2.cpp)
-target_include_directories(TwinMetric2 PRIVATE ${FREETYPE_INCLUDE_DIRS})
-target_link_libraries(TwinMetric2 ${FREETYPE_LIBRARIES})
+add_executable(TwinMetricPlus TwinMetricPlus.cpp)
+target_include_directories(TwinMetricPlus PRIVATE ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(TwinMetricPlus ${FREETYPE_LIBRARIES})
+
+add_executable(TwinMetricMinus TwinMetricMinus.cpp)
+target_include_directories(TwinMetricMinus PRIVATE ${FREETYPE_INCLUDE_DIRS})
+target_link_libraries(TwinMetricMinus ${FREETYPE_LIBRARIES})
 
 ##############################################################################
