@@ -22,6 +22,9 @@ NAME_AND_FILE g_pairs[] =
     { "DejaVu Serif", "DejaVuSerif.ttf" },
     { "DejaVu Sans", "DejaVuSans.ttf" },
     { "Ubuntu Mono", "UbuntuMono-R.ttf" },
+    { "Liberation Sans", "LiberationSans-Regular.ttf" },
+    { "Liberation Mono", "LiberationMono-Regular.ttf" },
+    { "Libre Franklin", "LibreFranklin-Regular.ttf" },
 };
 size_t g_pair_count = sizeof(g_pairs) / sizeof(g_pairs[0]);
 
